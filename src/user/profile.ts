@@ -1,21 +1,15 @@
-import _ from 'lodash';
-import validator from 'validator';
-import winston from 'winston';
+import _ = require('lodash');
+import validator = require('validator');
+import winston = require('winston');
 
-import * as utils from '../utils';
-import slugify from '../slugify';
-import * as meta from '../meta';
-import * as db from '../database';
-import * as groups from '../groups';
-import * as plugins from '../plugins';
+import utils = require('../utils');
+import slugify = require('../slugify');
+import meta = require('../meta');
+import db = require('../database');
+import groups = require('../groups');
+import plugins = require('../plugins');
 
-// The next line calls a function in a module that has not been updated to TS yet
-// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-module.exports = function (User: {
-        updateProfile: (uid: any, data: any, extraFields: any) => Promise<any>; getUserFields: (arg0: any, arg1: string[]) => any; setUserFields: (arg0: any, arg1: { password?: any; "password:shaWrapped"?: number; rss_token?: any; }) => any; existsBySlug: (arg0: any) => any; checkUsername: (username: any, uid:
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            any) => Promise<void>; checkMinReputation: (arg0: any, arg1: any, arg2: string) => any; getUserField: (arg0: any, arg1: string) => any; email: { sendValidationEmail: (arg0: any, arg1: { email: any; force: number; }) => Promise<any>; expireValidation: (arg0: any) => any; }; setUserField: (arg0: any, arg1: any, arg2: any) => any; changePassword: (uid: any, data: any) => Promise<void>; isPasswordValid: (arg0: any) => void; isAdministrator: (arg0: any) => any; hasPassword: (arg0: any) => any; isPasswordCorrect: (arg0: any, arg1: any, arg2: any) => any; hashPassword: (arg0: any) => any; reset: { cleanByUid: (arg0: any) => any; updateExpiry: (arg0: any) => any; }; auth: { revokeAllSessions: (arg0: any) => any; };
-    }) {
+module.exports = function (User) {
     User.updateProfile = async function (uid, data, extraFields) {
         let fields = [
             'username', 'email', 'fullname', 'website', 'location',
