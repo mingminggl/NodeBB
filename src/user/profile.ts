@@ -1,16 +1,16 @@
 
 'use strict';
 
-const _ = require('lodash');
-const validator = require('validator');
-const winston = require('winston');
+import _ = require('lodash');
+import validator = require('validator');
+import winston = require('winston');
 
-const utils = require('../utils');
-const slugify = require('../slugify');
-const meta = require('../meta');
-const db = require('../database');
-const groups = require('../groups');
-const plugins = require('../plugins');
+import utils = require('../utils');
+import slugify = require('../slugify');
+import meta = require('../meta');
+import db = require('../database');
+import groups = require('../groups');
+import plugins = require('../plugins');
 
 module.exports = function (User) {
     User.updateProfile = async function (uid, data, extraFields) {
@@ -138,7 +138,7 @@ module.exports = function (User) {
             throw error;
         }
     }
-    User.checkUsername = async username => isUsernameAvailable({ username });
+    User.checkUsername = async (username: any, uid: any) => isUsernameAvailable({ username }, {uid});
 
     async function isWebsiteValid(callerUid, data) {
         if (!data.website) {
@@ -173,12 +173,14 @@ module.exports = function (User) {
     }
 
     function isFullnameValid(data) {
+        var validator : any = new validator();
         if (data.fullname && (validator.isURL(data.fullname) || data.fullname.length > 255)) {
             throw new Error('[[error:invalid-fullname]]');
         }
     }
 
     function isLocationValid(data) {
+        var validator : any = new validator();
         if (data.location && (validator.isURL(data.location) || data.location.length > 255)) {
             throw new Error('[[error:invalid-location]]');
         }
@@ -205,6 +207,7 @@ module.exports = function (User) {
             return;
         }
         let groupTitles = [];
+        var validator : any = new validator();
         if (validator.isJSON(data.groupTitle)) {
             groupTitles = JSON.parse(data.groupTitle);
             if (!Array.isArray(groupTitles)) {
