@@ -9,12 +9,14 @@ import * as db from '../database';
 import * as groups from '../groups';
 import * as plugins from '../plugins';
 
+// The next line calls a function in a module that has not been updated to TS yet
+// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
 module.exports = function (User: {
         updateProfile: (uid: any, data: any, extraFields: any) => Promise<any>; getUserFields: (arg0: any, arg1: string[]) => any; setUserFields: (arg0: any, arg1: { password?: any; "password:shaWrapped"?: number; rss_token?: any; }) => any; existsBySlug: (arg0: any) => any; checkUsername: (username: any, uid:
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             any) => Promise<void>; checkMinReputation: (arg0: any, arg1: any, arg2: string) => any; getUserField: (arg0: any, arg1: string) => any; email: { sendValidationEmail: (arg0: any, arg1: { email: any; force: number; }) => Promise<any>; expireValidation: (arg0: any) => any; }; setUserField: (arg0: any, arg1: any, arg2: any) => any; changePassword: (uid: any, data: any) => Promise<void>; isPasswordValid: (arg0: any) => void; isAdministrator: (arg0: any) => any; hasPassword: (arg0: any) => any; isPasswordCorrect: (arg0: any, arg1: any, arg2: any) => any; hashPassword: (arg0: any) => any; reset: { cleanByUid: (arg0: any) => any; updateExpiry: (arg0: any) => any; }; auth: { revokeAllSessions: (arg0: any) => any; };
     }) {
-    User.updateProfile = async function (uid: any, data: { [x: string]: any; uid: any; email: any; username: any; fullname: any; }, extraFields: ConcatArray<string>) {
+    User.updateProfile = async function (uid, data, extraFields) {
         let fields = [
             'username', 'email', 'fullname', 'website', 'location',
             'groupTitle', 'birthday', 'signature', 'aboutme',
@@ -73,7 +75,7 @@ module.exports = function (User: {
         ]);
     };
 
-    async function validateData(callerUid: any, data: { uid: any; }) {
+    async function validateData(callerUid, data) {
         await isEmailValid(data);
         await isUsernameAvailable(data, data.uid);
         await isWebsiteValid(callerUid, data);
@@ -85,7 +87,7 @@ module.exports = function (User: {
         isGroupTitleValid(data);
     }
 
-    async function isEmailValid(data: { email: string; }) {
+    async function isEmailValid(data) {
         if (!data.email) {
             return;
         }
@@ -96,13 +98,13 @@ module.exports = function (User: {
         }
     }
 
-    async function isUsernameAvailable(data: { username: any; }, uid: { uid: any; }) {
+    async function isUsernameAvailable(data, uid) {
         if (!data.username) {
             return;
         }
         data.username = data.username.trim();
 
-        let userData: { username: any; userslug: any; };
+        let userData;
         if (uid) {
             userData = await User.getUserFields(uid, ['username', 'userslug']);
             if (userData.username === data.username) {
@@ -141,7 +143,7 @@ module.exports = function (User: {
     }
     User.checkUsername = async (username: any, uid: any) => isUsernameAvailable({ username }, {uid});
 
-    async function isWebsiteValid(callerUid: any, data: { website: string | any[]; uid: any; }) {
+    async function isWebsiteValid(callerUid, data) {
         if (!data.website) {
             return;
         }
@@ -151,7 +153,7 @@ module.exports = function (User: {
         await User.checkMinReputation(callerUid, data.uid, 'min:rep:website');
     }
 
-    async function isAboutMeValid(callerUid: any, data: { aboutme: string | any[]; uid: any; }) {
+    async function isAboutMeValid(callerUid, data) {
         if (!data.aboutme) {
             return;
         }
@@ -162,7 +164,7 @@ module.exports = function (User: {
         await User.checkMinReputation(callerUid, data.uid, 'min:rep:aboutme');
     }
 
-    async function isSignatureValid(callerUid: any, data: { signature: string; uid: any; }) {
+    async function isSignatureValid(callerUid, data) {
         if (!data.signature) {
             return;
         }
@@ -173,21 +175,21 @@ module.exports = function (User: {
         await User.checkMinReputation(callerUid, data.uid, 'min:rep:signature');
     }
 
-    function isFullnameValid(data: { fullname: string | any[]; }) {
+    function isFullnameValid(data) {
         var validator : any = new validator();
         if (data.fullname && (validator.isURL(data.fullname) || data.fullname.length > 255)) {
             throw new Error('[[error:invalid-fullname]]');
         }
     }
 
-    function isLocationValid(data: { location: string | any[]; }) {
+    function isLocationValid(data) {
         var validator : any = new validator();
         if (data.location && (validator.isURL(data.location) || data.location.length > 255)) {
             throw new Error('[[error:invalid-location]]');
         }
     }
 
-    function isBirthdayValid(data: { birthday: string | number | Date; }) {
+    function isBirthdayValid(data) {
         if (!data.birthday) {
             return;
         }
@@ -198,8 +200,8 @@ module.exports = function (User: {
         }
     }
 
-    function isGroupTitleValid(data: { groupTitle: string; }) {
-        function checkTitle(title: string) {
+    function isGroupTitleValid(data) {
+        function checkTitle(title) {
             if (title === 'registered-users' || groups.isPrivilegeGroup(title)) {
                 throw new Error('[[error:invalid-group-title]]');
             }
@@ -224,7 +226,7 @@ module.exports = function (User: {
         }
     }
 
-    User.checkMinReputation = async function (callerUid: string, uid: string, setting: string) {
+    User.checkMinReputation = async function (callerUid, uid, setting) {
         const isSelf = parseInt(callerUid, 10) === parseInt(uid, 10);
         if (!isSelf || meta.config['reputation:disabled']) {
             return;
@@ -235,7 +237,7 @@ module.exports = function (User: {
         }
     };
 
-    async function updateEmail(uid: any, newEmail: any) {
+    async function updateEmail(uid, newEmail) {
         let oldEmail = await User.getUserField(uid, 'email');
         oldEmail = oldEmail || '';
         if (oldEmail === newEmail) {
@@ -247,11 +249,11 @@ module.exports = function (User: {
             await User.email.sendValidationEmail(uid, {
                 email: newEmail,
                 force: 1,
-            }).catch((err: { stack: any; }) => winston.error(`[user.create] Validation email failed to send\n[emailer.send] ${err.stack}`));
+            }).catch(err => winston.error(`[user.create] Validation email failed to send\n[emailer.send] ${err.stack}`));
         }
     }
 
-    async function updateUsername(uid: any, newUsername: string) {
+    async function updateUsername(uid, newUsername) {
         if (!newUsername) {
             return;
         }
@@ -270,7 +272,7 @@ module.exports = function (User: {
         await db.sortedSetAdd('username:sorted', 0, `${newUsername.toLowerCase()}:${uid}`);
     }
 
-    async function updateUidMapping(field: string, uid: any, value: any, oldValue: any) {
+    async function updateUidMapping(field, uid, value, oldValue) {
         if (value === oldValue) {
             return;
         }
@@ -281,7 +283,7 @@ module.exports = function (User: {
         }
     }
 
-    async function updateFullname(uid: any, newFullname: string) {
+    async function updateFullname(uid, newFullname) {
         const fullname = await User.getUserField(uid, 'fullname');
         await updateUidMapping('fullname', uid, newFullname, fullname);
         if (newFullname !== fullname) {
@@ -294,7 +296,7 @@ module.exports = function (User: {
         }
     }
 
-    User.changePassword = async function (uid: string | number, data: { uid: string; newPassword: any; currentPassword: any; ip: any; }) {
+    User.changePassword = async function (uid, data) {
         if (uid <= 0 || !data || !data.uid) {
             throw new Error('[[error:invalid-uid]]');
         }
