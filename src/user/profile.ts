@@ -209,4 +209,6 @@ export default function (User: any) {
         throw new Error('[[error:invalid-group-title]]');
       }
       groupTitles.forEach(title => checkTitle(title));
-   
+    }
+  }
+}
