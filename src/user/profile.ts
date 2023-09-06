@@ -1,6 +1,3 @@
-
-'use strict';
-
 import _ = require('lodash');
 import validator = require('validator');
 import winston = require('winston');
@@ -12,6 +9,8 @@ import db = require('../database');
 import groups = require('../groups');
 import plugins = require('../plugins');
 
+// The next line calls a function in a module that has not been updated to TS yet
+// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
 module.exports = function (User) {
     User.updateProfile = async function (uid, data, extraFields) {
         let fields = [
