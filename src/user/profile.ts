@@ -1,18 +1,50 @@
+import _ from 'lodash';
+import validator from 'validator';
+import winston from 'winston';
 
-'use strict';
+import utils from '../utils';
+import slugify from '../slugify';
+import meta from '../meta';
+import db from '../database';
+import groups from '../groups';
+import plugins from '../plugins';
 
-const _ = require('lodash');
-const validator = require('validator');
-const winston = require('winston');
+interface UserData {
+  uid: number;
+  data: Record<string, any>;
+  fields: string[];
+}
 
-const utils = require('../utils');
-const slugify = require('../slugify');
-const meta = require('../meta');
-const db = require('../database');
-const groups = require('../groups');
-const plugins = require('../plugins');
+interface UserUpdateData {
+  uid?: number;
+  username?: string;
+  email?: string;
+  fullname?: string;
+  website?: string;
+  location?: string;
+  groupTitle?: string;
+  birthday?: string;
+  signature?: string;
+  aboutme?: string;
+}
+
+interface UserChangePasswordData {
+  uid: number;
+  currentPassword?: string;
+  newPassword: string;
+  ip: string;
+}
+
+export interface UserModel {
+  updateProfile: (uid: number, data: UserUpdateData, extraFields: string[] | undefined) => Promise<Record<string, any>>;
+  checkUsername: (username: string) => Promise<void>;
+  checkMinReputation: (callerUid: number, uid: number, setting: string) => Promise<void>;
+  changePassword: (uid: number, data: UserChangePasswordData) => Promise<void>;
+}
 
 module.exports = function (User) {
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
     User.updateProfile = async function (uid, data, extraFields) {
         let fields = [
             'username', 'email', 'fullname', 'website', 'location',
@@ -21,7 +53,9 @@ module.exports = function (User) {
         if (Array.isArray(extraFields)) {
             fields = _.uniq(fields.concat(extraFields));
         }
-        if (!data.uid) {
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        if (!data.uid as boolean) {
             throw new Error('[[error:invalid-update-uid]]');
         }
         const updateUid = data.uid;
@@ -138,7 +172,7 @@ module.exports = function (User) {
             throw error;
         }
     }
-    User.checkUsername = async username => isUsernameAvailable({ username });
+    User.checkUsername = async (username: any, uid: number) => isUsernameAvailable({ username }, { uid });
 
     async function isWebsiteValid(callerUid, data) {
         if (!data.website) {
