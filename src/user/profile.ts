@@ -298,44 +298,62 @@ module.exports = function(User: UserModel) {
         }
     }
 
-    async function updateUsername(uid, newUsername) {
-        if (!newUsername) {
-            return;
-        }
-        const userData: any= await User.getUserFields(uid, ['username', 'userslug']);
-        if (userData.username === newUsername) {
-            return;
-        }
-        const newUserslug = slugify(newUsername);
-        const now = Date.now();
-        await Promise.all([
-            updateUidMapping('username', uid, newUsername, userData.username),
-            updateUidMapping('userslug', uid, newUserslug, userData.userslug),
-            db.sortedSetAdd(`user:${uid}:usernames`, now, `${newUsername}:${now}`),
-        ]);
-        await db.sortedSetRemove('username:sorted', `${userData.username.toLowerCase()}:${uid}`);
-        await db.sortedSetAdd('username:sorted', 0, `${newUsername.toLowerCase()}:${uid}`);
-    }
-
-    async function updateUidMapping(field, uid, value, oldValue) {
+    async function updateUidMapping(field, uid: number, value: string, oldValue: string) {
         if (value === oldValue) {
             return;
         }
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         await db.sortedSetRemove(`${field}:uid`, oldValue);
         await User.setUserField(uid, field, value);
         if (value) {
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             await db.sortedSetAdd(`${field}:uid`, uid, value);
         }
     }
 
-    async function updateFullname(uid, newFullname) {
-        const fullname: any = await User.getUserField(uid, 'fullname');
+    async function updateUsername(uid: number, newUsername: string) {
+        if (!newUsername) {
+            return;
+        }
+        const userData = (await User.getUserFields(uid, ['username', 'userslug'])) as { username: string; userslug: string } || { username: '', userslug: '' };
+
+        if (userData.username === newUsername) {
+            return;
+        }
+
+        const newUserslug : string = slugify(newUsername) as string;
+        const now = Date.now();
+        await Promise.all([
+            updateUidMapping('username', uid, newUsername, userData.username),
+            updateUidMapping('userslug', uid, newUserslug, userData.userslug),
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            db.sortedSetAdd(`user:${uid}:usernames`, now, `${newUsername}:${now}`),
+        ]);
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        await db.sortedSetRemove('username:sorted', `${userData.username.toLowerCase()}:${uid}`);
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        await db.sortedSetAdd('username:sorted', 0, `${newUsername.toLowerCase()}:${uid}`);
+    }
+
+    async function updateFullname(uid: number, newFullname: string) {
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        const fullname = await User.getUserField(uid, 'fullname') as string;
         await updateUidMapping('fullname', uid, newFullname, fullname);
         if (newFullname !== fullname) {
             if (fullname) {
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 await db.sortedSetRemove('fullname:sorted', `${fullname.toLowerCase()}:${uid}`);
             }
             if (newFullname) {
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 await db.sortedSetAdd('fullname:sorted', 0, `${newFullname.toLowerCase()}:${uid}`);
             }
         }
@@ -346,10 +364,10 @@ module.exports = function(User: UserModel) {
             throw new Error('[[error:invalid-uid]]');
         }
         User.isPasswordValid(data.newPassword);
-        const [isAdmin, hasPassword] = await Promise.all([
+        const [isAdmin, hasPassword] : boolean[] = await Promise.all([
             User.isAdministrator(uid),
             User.hasPassword(uid),
-        ]);
+        ] as boolean[]);
         // The next line calls a function in a module that has not been updated to TS yet
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         if (meta.config['password:disableEdit'] && !isAdmin) {

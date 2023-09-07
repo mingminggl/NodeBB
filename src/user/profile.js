@@ -253,12 +253,28 @@ module.exports = function (User) {
             }
         });
     }
+    function updateUidMapping(field, uid, value, oldValue) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (value === oldValue) {
+                return;
+            }
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            yield database_1.default.sortedSetRemove(`${field}:uid`, oldValue);
+            yield User.setUserField(uid, field, value);
+            if (value) {
+                // The next line calls a function in a module that has not been updated to TS yet
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+                yield database_1.default.sortedSetAdd(`${field}:uid`, uid, value);
+            }
+        });
+    }
     function updateUsername(uid, newUsername) {
         return __awaiter(this, void 0, void 0, function* () {
             if (!newUsername) {
                 return;
             }
-            const userData = yield User.getUserFields(uid, ['username', 'userslug']);
+            const userData = (yield User.getUserFields(uid, ['username', 'userslug'])) || { username: '', userslug: '' };
             if (userData.username === newUsername) {
                 return;
             }
@@ -267,33 +283,33 @@ module.exports = function (User) {
             yield Promise.all([
                 updateUidMapping('username', uid, newUsername, userData.username),
                 updateUidMapping('userslug', uid, newUserslug, userData.userslug),
+                // The next line calls a function in a module that has not been updated to TS yet
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 database_1.default.sortedSetAdd(`user:${uid}:usernames`, now, `${newUsername}:${now}`),
             ]);
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             yield database_1.default.sortedSetRemove('username:sorted', `${userData.username.toLowerCase()}:${uid}`);
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             yield database_1.default.sortedSetAdd('username:sorted', 0, `${newUsername.toLowerCase()}:${uid}`);
-        });
-    }
-    function updateUidMapping(field, uid, value, oldValue) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (value === oldValue) {
-                return;
-            }
-            yield database_1.default.sortedSetRemove(`${field}:uid`, oldValue);
-            yield User.setUserField(uid, field, value);
-            if (value) {
-                yield database_1.default.sortedSetAdd(`${field}:uid`, uid, value);
-            }
         });
     }
     function updateFullname(uid, newFullname) {
         return __awaiter(this, void 0, void 0, function* () {
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             const fullname = yield User.getUserField(uid, 'fullname');
             yield updateUidMapping('fullname', uid, newFullname, fullname);
             if (newFullname !== fullname) {
                 if (fullname) {
+                    // The next line calls a function in a module that has not been updated to TS yet
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                     yield database_1.default.sortedSetRemove('fullname:sorted', `${fullname.toLowerCase()}:${uid}`);
                 }
                 if (newFullname) {
+                    // The next line calls a function in a module that has not been updated to TS yet
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                     yield database_1.default.sortedSetAdd('fullname:sorted', 0, `${newFullname.toLowerCase()}:${uid}`);
                 }
             }
