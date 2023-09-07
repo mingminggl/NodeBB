@@ -77,7 +77,7 @@ module.exports = function (User: User) {
             throw new Error('[[error:invalid-update-uid]]');
         }
         const updateUid = data.uid;
-
+        
         const result = await plugins.hooks.fire('filter:user.updateProfile', {
             uid: uid,
             data: data,
@@ -380,7 +380,7 @@ module.exports = function (User: User) {
                 password: hashedPassword,
                 'password:shaWrapped': 1,
                 // The next line calls utils which is in a module that has not been updated to TS yet
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call
                 rss_token: utils.generateUUID(),
             }),
             // The next line calls user.reset which is in a module that has not been updated to TS yet
