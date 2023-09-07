@@ -37,7 +37,7 @@ interface UserChangePasswordData {
   ip: string;
 }
 
-interface UserModel {
+export interface UserModel {
   hashPassword(newPassword: string): unknown;
   auth: any;
   reset: any;
@@ -57,7 +57,7 @@ interface UserModel {
   changePassword: (uid: number, data: UserChangePasswordData) => Promise<void>;
 }
 
-export default function(User: UserModel) {
+module.exports = function(User: UserModel) {
     // The next line calls a function in a module that has not been updated to TS yet
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
     User.updateProfile = async function (uid, data, extraFields) {
@@ -346,10 +346,10 @@ export default function(User: UserModel) {
             throw new Error('[[error:invalid-uid]]');
         }
         User.isPasswordValid(data.newPassword);
-        const [isAdmin, hasPassword]: boolean[] = await Promise.all([
+        const [isAdmin, hasPassword] = await Promise.all([
             User.isAdministrator(uid),
             User.hasPassword(uid),
-        ] as boolean[]);
+        ]);
         // The next line calls a function in a module that has not been updated to TS yet
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         if (meta.config['password:disableEdit'] && !isAdmin) {
@@ -397,4 +397,4 @@ export default function(User: UserModel) {
 
         plugins.hooks.fire('action:password.change', { uid: uid, targetUid: data.uid });
     };
-}
+};

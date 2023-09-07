@@ -21,7 +21,7 @@ const meta_1 = __importDefault(require("../meta"));
 const database_1 = __importDefault(require("../database"));
 const groups_1 = __importDefault(require("../groups"));
 const plugins_1 = __importDefault(require("../plugins"));
-function default_1(User) {
+module.exports = function (User) {
     // The next line calls a function in a module that has not been updated to TS yet
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
     User.updateProfile = function (uid, data, extraFields) {
@@ -351,5 +351,4 @@ function default_1(User) {
             plugins_1.default.hooks.fire('action:password.change', { uid: uid, targetUid: data.uid });
         });
     };
-}
-exports.default = default_1;
+};
