@@ -45,7 +45,7 @@ export interface UserModel {
   hasPassword(uid: number): any;
   isAdministrator(uid: number): any;
   isPasswordValid(newPassword: string): unknown;
-  setUserField(uid: number, field: any, value: any): unknown;
+  setUserField(uid: number, field: string, value: any): unknown;
   email: any;
   getUserField(uid: number, arg1: string): unknown;
   checkUsername: (username: any, uid: number) => Promise<void>;
@@ -144,7 +144,7 @@ module.exports = function(User: UserModel) {
         }
     }
 
-    async function isUsernameAvailable(data, uid) {
+    async function isUsernameAvailable(data: UserUpdateData, uid: number) {
         if (!data.username) {
             return;
         }
@@ -187,7 +187,7 @@ module.exports = function(User: UserModel) {
             throw error;
         }
     }
-    User.checkUsername = async (username: any, uid: number) => isUsernameAvailable({ username }, { uid });
+    User.checkUsername = async (username: UserUpdateData, uid: number) => isUsernameAvailable(username, uid);
 
     async function isWebsiteValid(callerUid, data) {
         if (!data.website) {
@@ -199,7 +199,7 @@ module.exports = function(User: UserModel) {
         await User.checkMinReputation(callerUid, data.uid, 'min:rep:website');
     }
 
-    async function isAboutMeValid(callerUid, data) {
+    async function isAboutMeValid(callerUid, data: UserUpdateData) {
         if (!data.aboutme) {
             return;
         }
@@ -210,7 +210,7 @@ module.exports = function(User: UserModel) {
         await User.checkMinReputation(callerUid, data.uid, 'min:rep:aboutme');
     }
 
-    async function isSignatureValid(callerUid, data) {
+    async function isSignatureValid(callerUid, data : UserUpdateData) {
         if (!data.signature) {
             return;
         }
@@ -221,19 +221,19 @@ module.exports = function(User: UserModel) {
         await User.checkMinReputation(callerUid, data.uid, 'min:rep:signature');
     }
 
-    function isFullnameValid(data) {
+    function isFullnameValid(data : UserUpdateData) {
         if (data.fullname && (validator.isURL(data.fullname) || data.fullname.length > 255)) {
             throw new Error('[[error:invalid-fullname]]');
         }
     }
 
-    function isLocationValid(data) {
+    function isLocationValid(data : UserUpdateData) {
         if (data.location && (validator.isURL(data.location) || data.location.length > 255)) {
             throw new Error('[[error:invalid-location]]');
         }
     }
 
-    function isBirthdayValid(data) {
+    function isBirthdayValid(data: UserUpdateData) {
         if (!data.birthday) {
             return;
         }
@@ -244,8 +244,8 @@ module.exports = function(User: UserModel) {
         }
     }
 
-    function isGroupTitleValid(data) {
-        function checkTitle(title) {
+    function isGroupTitleValid(data: UserUpdateData) {
+        function checkTitle(title: string) {
             if (title === 'registered-users' || groups.isPrivilegeGroup(title)) {
                 throw new Error('[[error:invalid-group-title]]');
             }
@@ -253,9 +253,9 @@ module.exports = function(User: UserModel) {
         if (!data.groupTitle) {
             return;
         }
-        let groupTitles = [];
+        let groupTitles : string[] = [];
         if (validator.isJSON(data.groupTitle)) {
-            groupTitles = JSON.parse(data.groupTitle);
+            groupTitles = JSON.parse(data.groupTitle) as string[];
             if (!Array.isArray(groupTitles)) {
                 throw new Error('[[error:invalid-group-title]]');
             }
@@ -264,8 +264,10 @@ module.exports = function(User: UserModel) {
             groupTitles = [data.groupTitle];
             checkTitle(data.groupTitle);
         }
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         if (!meta.config.allowMultipleBadges && groupTitles.length > 1) {
-            data.groupTitle = JSON.stringify(groupTitles[0]);
+            data.groupTitle = JSON.stringify(groupTitles[0]) as string;
         }
     }
 
@@ -273,16 +275,22 @@ module.exports = function(User: UserModel) {
         const roundedNumber1: number = Math.round(uid * 10) / 10;
         const roundedNumber2: number = Math.round(callerUid * 10) / 10;
         const isSelf = roundedNumber1 === roundedNumber2;
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         if (!isSelf || meta.config['reputation:disabled']) {
             return;
         }
         const reputation = await User.getUserField(uid, 'reputation');
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         if (reputation < meta.config[setting]) {
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             throw new Error(`[[error:not-enough-reputation-${setting.replace(/:/g, '-')}, ${meta.config[setting]}]]`);
         }
     };
 
-    async function updateEmail(uid, newEmail) {
+    async function updateEmail(uid: number, newEmail: string) {
         let oldEmail = await User.getUserField(uid, 'email');
         oldEmail = oldEmail || '';
         if (oldEmail === newEmail) {
@@ -291,14 +299,18 @@ module.exports = function(User: UserModel) {
 
         // 👉 Looking for email change logic? src/user/email.js (UserEmail.confirmByUid)
         if (newEmail) {
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             await User.email.sendValidationEmail(uid, {
                 email: newEmail,
                 force: 1,
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             }).catch(err => winston.error(`[user.create] Validation email failed to send\n[emailer.send] ${err.stack}`));
         }
     }
 
-    async function updateUidMapping(field, uid: number, value: string, oldValue: string) {
+    async function updateUidMapping(field: string, uid: number, value: string, oldValue: string) {
         if (value === oldValue) {
             return;
         }

@@ -144,7 +144,7 @@ module.exports = function (User) {
             }
         });
     }
-    User.checkUsername = (username, uid) => __awaiter(this, void 0, void 0, function* () { return isUsernameAvailable({ username }, { uid }); });
+    User.checkUsername = (username, uid) => __awaiter(this, void 0, void 0, function* () { return isUsernameAvailable(username, uid); });
     function isWebsiteValid(callerUid, data) {
         return __awaiter(this, void 0, void 0, function* () {
             if (!data.website) {
@@ -219,6 +219,8 @@ module.exports = function (User) {
             groupTitles = [data.groupTitle];
             checkTitle(data.groupTitle);
         }
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         if (!meta_1.default.config.allowMultipleBadges && groupTitles.length > 1) {
             data.groupTitle = JSON.stringify(groupTitles[0]);
         }
@@ -228,11 +230,17 @@ module.exports = function (User) {
             const roundedNumber1 = Math.round(uid * 10) / 10;
             const roundedNumber2 = Math.round(callerUid * 10) / 10;
             const isSelf = roundedNumber1 === roundedNumber2;
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             if (!isSelf || meta_1.default.config['reputation:disabled']) {
                 return;
             }
             const reputation = yield User.getUserField(uid, 'reputation');
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             if (reputation < meta_1.default.config[setting]) {
+                // The next line calls a function in a module that has not been updated to TS yet
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 throw new Error(`[[error:not-enough-reputation-${setting.replace(/:/g, '-')}, ${meta_1.default.config[setting]}]]`);
             }
         });
@@ -246,9 +254,13 @@ module.exports = function (User) {
             }
             // 👉 Looking for email change logic? src/user/email.js (UserEmail.confirmByUid)
             if (newEmail) {
+                // The next line calls a function in a module that has not been updated to TS yet
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 yield User.email.sendValidationEmail(uid, {
                     email: newEmail,
                     force: 1,
+                    // The next line calls a function in a module that has not been updated to TS yet
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 }).catch(err => winston_1.default.error(`[user.create] Validation email failed to send\n[emailer.send] ${err.stack}`));
             }
         });
