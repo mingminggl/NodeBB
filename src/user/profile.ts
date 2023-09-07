@@ -1,15 +1,70 @@
-import _ = require('lodash');
-import validator = require('validator');
-import winston = require('winston');
+import _ from 'lodash';
+import validator from 'validator';
+import winston from 'winston';
 
-import utils = require('../utils');
-import slugify = require('../slugify');
-import meta = require('../meta');
-import db = require('../database');
-import groups = require('../groups');
-import plugins = require('../plugins');
+import utils from '../utils';
+import slugify from '../slugify';
+import meta from '../meta';
+import db from '../database';
+import groups from '../groups';
+import plugins from '../plugins';
 
-module.exports = function (User) {
+interface UserData {
+    uid: any;
+    data: Record<string, any>;
+    fields: string[];
+}
+
+interface UserUpdateData {
+    email?: string;
+    username?: string;
+    fullname?: string;
+    website?: string;
+    location?: string;
+    groupTitle?: string;
+    birthday?: string;
+    signature?: string;
+    aboutme?: string;
+    uid: any;
+}
+
+export interface UserProfile {
+    email: string;
+    username: string;
+    userslug: string;
+    picture: string;
+    'icon:text': string;
+    'icon:bgColor': string;
+}
+
+export interface User {
+    isAdministrator(uid: any): any;
+    hasPassword(uid: any): any;
+    isPasswordValid(newPassword: string): unknown;
+    setUserField(uid: any, field: any, value: any): unknown;
+    auth: any;
+    reset: any;
+    hashPassword(newPassword: string): unknown;
+    isPasswordCorrect(uid: any, currentPassword: string, ip: string): unknown;
+    email: any;
+    getUserField(uid: any, arg1: string): string;
+    existsBySlug(userslug: any): unknown;
+    setUserFields(updateUid: any, updateData: {}): unknown;
+    updateProfile(uid: any, data: UserUpdateData, extraFields?: string[]): Promise<UserProfile>;
+    checkUsername(username: string, uid: any): Promise<void>;
+    checkMinReputation(callerUid: string, uid: any, setting: string): Promise<void>;
+    changePassword(uid: any, data: PasswordChangeData): Promise<void>;
+    getUserFields(updateUid: any, fields: string[]): Promise<any>;
+}
+
+interface PasswordChangeData {
+    uid: any;
+    newPassword: string;
+    currentPassword?: string;
+    ip?: string;
+}
+
+module.exports = function (User: User) {
     User.updateProfile = async function (uid, data, extraFields) {
         let fields = [
             'username', 'email', 'fullname', 'website', 'location',
@@ -277,7 +332,7 @@ module.exports = function (User) {
         }
     }
 
-    async function updateFullname(uid, newFullname) {
+    async function updateFullname(uid: number, newFullname: string) {
         const fullname = await User.getUserField(uid, 'fullname');
         await updateUidMapping('fullname', uid, newFullname, fullname);
         if (newFullname !== fullname) {
