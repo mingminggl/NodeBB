@@ -295,6 +295,8 @@ module.exports = function (User: User) {
 
         // 👉 Looking for email change logic? src/user/email.js (UserEmail.confirmByUid)
         if (newEmail) {
+            // The next line calls user.email which is in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             await User.email.sendValidationEmail(uid, {
                 email: newEmail,
                 force: 1,
@@ -379,13 +381,19 @@ module.exports = function (User: User) {
                 'password:shaWrapped': 1,
                 rss_token: utils.generateUUID(),
             }),
+            // The next line calls user.reset which is in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             User.reset.cleanByUid(data.uid),
+            // The next line calls user.reset which is in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             User.reset.updateExpiry(data.uid),
+            // The next line calls user.auth which is in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             User.auth.revokeAllSessions(data.uid),
+            // The next line calls user.email which is in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             User.email.expireValidation(data.uid),
         ]);
-    // The next line calls router.get which is in a module that has not been updated to TS yet
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         plugins.hooks.fire('action:password.change', { uid: uid, targetUid: data.uid });
     };
 };
