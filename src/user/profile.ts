@@ -125,14 +125,32 @@ module.exports = function (User: User) {
     };
 
     async function validateData(callerUid, data) {
+        // The next line calls router.get which is in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         await isEmailValid(data);
+        // The next line calls router.get which is in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         await isUsernameAvailable(data, data.uid);
+        // The next line calls router.get which is in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         await isWebsiteValid(callerUid, data);
+        // The next line calls router.get which is in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         await isAboutMeValid(callerUid, data);
+        // The next line calls router.get which is in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         await isSignatureValid(callerUid, data);
+        // The next line calls router.get which is in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         isFullnameValid(data);
+        // The next line calls router.get which is in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         isLocationValid(data);
+        // The next line calls router.get which is in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         isBirthdayValid(data);
+        // The next line calls router.get which is in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         isGroupTitleValid(data);
     }
 
