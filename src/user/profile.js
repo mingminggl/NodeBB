@@ -21,7 +21,7 @@ const meta_1 = __importDefault(require("../meta"));
 const database_1 = __importDefault(require("../database"));
 const groups_1 = __importDefault(require("../groups"));
 const plugins_1 = __importDefault(require("../plugins"));
-module.exports = function (User) {
+function default_1(User) {
     // The next line calls a function in a module that has not been updated to TS yet
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
     User.updateProfile = function (uid, data, extraFields) {
@@ -105,11 +105,12 @@ module.exports = function (User) {
         });
     }
     function isUsernameAvailable(data, uid) {
+        var _a;
         return __awaiter(this, void 0, void 0, function* () {
             if (!data.username) {
                 return;
             }
-            data.username = data.username.trim();
+            data.username = (_a = data.username) === null || _a === void 0 ? void 0 : _a.trim();
             let userData;
             if (uid) {
                 userData = yield User.getUserFields(uid, ['username', 'userslug']);
@@ -224,7 +225,9 @@ module.exports = function (User) {
     }
     User.checkMinReputation = function (callerUid, uid, setting) {
         return __awaiter(this, void 0, void 0, function* () {
-            const isSelf = parseInt(callerUid, 10) === parseInt(uid, 10);
+            const roundedNumber1 = Math.round(uid * 10) / 10;
+            const roundedNumber2 = Math.round(callerUid * 10) / 10;
+            const isSelf = roundedNumber1 === roundedNumber2;
             if (!isSelf || meta_1.default.config['reputation:disabled']) {
                 return;
             }
@@ -306,10 +309,14 @@ module.exports = function (User) {
                 User.isAdministrator(uid),
                 User.hasPassword(uid),
             ]);
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             if (meta_1.default.config['password:disableEdit'] && !isAdmin) {
                 throw new Error('[[error:no-privileges]]');
             }
-            const isSelf = parseInt(uid, 10) === parseInt(data.uid, 10);
+            const roundedNumber1 = Math.round(uid * 10) / 10;
+            const roundedNumber2 = Math.round(data.uid * 10) / 10;
+            const isSelf = roundedNumber1 === roundedNumber2;
             if (!isAdmin && !isSelf) {
                 throw new Error('[[user:change_password_error_privileges]]');
             }
@@ -324,14 +331,25 @@ module.exports = function (User) {
                 User.setUserFields(data.uid, {
                     password: hashedPassword,
                     'password:shaWrapped': 1,
+                    // The next line calls a function in a module that has not been updated to TS yet
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
                     rss_token: utils_1.default.generateUUID(),
                 }),
+                // The next line calls a function in a module that has not been updated to TS yet
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 User.reset.cleanByUid(data.uid),
+                // The next line calls a function in a module that has not been updated to TS yet
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 User.reset.updateExpiry(data.uid),
+                // The next line calls a function in a module that has not been updated to TS yet
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 User.auth.revokeAllSessions(data.uid),
+                // The next line calls a function in a module that has not been updated to TS yet
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 User.email.expireValidation(data.uid),
             ]);
             plugins_1.default.hooks.fire('action:password.change', { uid: uid, targetUid: data.uid });
         });
     };
-};
+}
+exports.default = default_1;
