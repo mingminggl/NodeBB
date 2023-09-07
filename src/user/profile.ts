@@ -10,7 +10,7 @@ import groups from '../groups';
 import plugins from '../plugins';
 
 interface UserData {
-    uid: any;
+    uid?: number;
     data: Record<string, any>;
     fields: string[];
 }
@@ -25,7 +25,7 @@ interface UserUpdateData {
     birthday?: string;
     signature?: string;
     aboutme?: string;
-    uid: any;
+    uid?: number;
 }
 
 export interface UserProfile {
@@ -38,27 +38,27 @@ export interface UserProfile {
 }
 
 export interface User {
-    isAdministrator(uid: any): any;
-    hasPassword(uid: any): any;
-    isPasswordValid(newPassword: string): unknown;
-    setUserField(uid: any, field: any, value: any): unknown;
+    isAdministrator(uid?: number): boolean;
+    hasPassword(uid?: number): boolean;
+    isPasswordValid(newPassword: string): boolean;
+    setUserField(uid?: number, field?: any, value?: any): unknown;
     auth: any;
     reset: any;
     hashPassword(newPassword: string): unknown;
-    isPasswordCorrect(uid: any, currentPassword: string, ip: string): unknown;
+    isPasswordCorrect(uid?: number, currentPassword?: string, ip?: string): unknown;
     email: any;
-    getUserField(uid: any, arg1: string): string;
+    getUserField(uid?: number, arg1?: string): string;
     existsBySlug(userslug: any): unknown;
-    setUserFields(updateUid: any, updateData: {}): unknown;
-    updateProfile(uid: any, data: UserUpdateData, extraFields?: string[]): Promise<UserProfile>;
-    checkUsername(username: string, uid: any): Promise<void>;
-    checkMinReputation(callerUid: string, uid: any, setting: string): Promise<void>;
-    changePassword(uid: any, data: PasswordChangeData): Promise<void>;
+    setUserFields(updateUid: number, updateData: {}): unknown;
+    updateProfile(uid?: number, data?: UserUpdateData, extraFields?: string[]): Promise<UserProfile>;
+    checkUsername(username: string, uid?: number): Promise<void>;
+    checkMinReputation(callerUid?: number, uid?: number, setting?: string): Promise<void>;
+    changePassword(uid?: number, data?: PasswordChangeData): Promise<void>;
     getUserFields(updateUid: any, fields: string[]): Promise<any>;
 }
 
 interface PasswordChangeData {
-    uid: any;
+    uid?: number;
     newPassword: string;
     currentPassword?: string;
     ip?: string;
@@ -276,7 +276,7 @@ module.exports = function (User: User) {
     }
 
     User.checkMinReputation = async function (callerUid, uid, setting) {
-        const isSelf = parseInt(callerUid, 10) === parseInt(uid, 10);
+        const isSelf = callerUid === uid;
         if (!isSelf || meta.config['reputation:disabled']) {
             return;
         }
@@ -347,7 +347,7 @@ module.exports = function (User: User) {
         }
     }
 
-    User.changePassword = async function (uid, data) {
+    User.changePassword = async function (uid: number, data) {
         if (uid <= 0 || !data || !data.uid) {
             throw new Error('[[error:invalid-uid]]');
         }
@@ -361,7 +361,7 @@ module.exports = function (User: User) {
             throw new Error('[[error:no-privileges]]');
         }
 
-        const isSelf = parseInt(uid, 10) === parseInt(data.uid, 10);
+        const isSelf = uid === data.uid;
 
         if (!isAdmin && !isSelf) {
             throw new Error('[[user:change_password_error_privileges]]');
