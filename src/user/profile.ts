@@ -251,6 +251,8 @@ module.exports = function (User: User) {
 
     function isGroupTitleValid(data) {
         function checkTitle(title) {
+            // The next line calls groups which is in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             if (title === 'registered-users' || groups.isPrivilegeGroup(title)) {
                 throw new Error('[[error:invalid-group-title]]');
             }
@@ -287,6 +289,8 @@ module.exports = function (User: User) {
     };
 
     async function updateEmail(uid, newEmail) {
+        // The next line calls user.email which is in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         let oldEmail = await User.getUserField(uid, 'email');
         oldEmail = oldEmail || '';
         if (oldEmail === newEmail) {
