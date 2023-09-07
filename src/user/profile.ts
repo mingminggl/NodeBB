@@ -379,6 +379,8 @@ module.exports = function (User: User) {
             User.setUserFields(data.uid, {
                 password: hashedPassword,
                 'password:shaWrapped': 1,
+                // The next line calls utils which is in a module that has not been updated to TS yet
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 rss_token: utils.generateUUID(),
             }),
             // The next line calls user.reset which is in a module that has not been updated to TS yet
@@ -394,6 +396,8 @@ module.exports = function (User: User) {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             User.email.expireValidation(data.uid),
         ]);
+        // The next line calls plugins.hooks.fire which is in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         plugins.hooks.fire('action:password.change', { uid: uid, targetUid: data.uid });
     };
 };
