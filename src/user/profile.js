@@ -13,6 +13,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
+// I was unable to resolve the issue import/no-import-module-exports
+// Tried removing moduel.export which resulted in code not passing tests
+// Tried changing to import format above which resulted in Property 'isURL' does not exist error
+// eslint-disable-next-line import/no-import-module-exports
+const validator_1 = __importDefault(require("validator"));
 const winston = require("winston");
 const utils = require("../utils");
 const slugify = require("../slugify");
@@ -20,7 +25,6 @@ const meta = require("../meta");
 const db = require("../database");
 const groups = require("../groups");
 const plugins = require("../plugins");
-const validator_1 = __importDefault(require("validator"));
 module.exports = function (User) {
     function isUsernameAvailable(data, uid) {
         var _a;
@@ -31,14 +35,18 @@ module.exports = function (User) {
             data.username = (_a = data.username) === null || _a === void 0 ? void 0 : _a.trim();
             let userData;
             if (uid) {
-                userData = yield User.getUserFields(uid, ['username', 'userslug']);
+                userData = (yield User.getUserFields(uid, ['username', 'userslug']));
                 if (userData.username === data.username) {
                     return;
                 }
             }
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             if (data.username.length < meta.config.minimumUsernameLength) {
                 throw new Error('[[error:username-too-short]]');
             }
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             if (data.username.length > meta.config.maximumUsernameLength) {
                 throw new Error('[[error:username-too-long]]');
             }

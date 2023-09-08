@@ -1,4 +1,9 @@
 import _ = require('lodash');
+// I was unable to resolve the issue import/no-import-module-exports
+// Tried removing moduel.export which resulted in code not passing tests
+// Tried changing to import format above which resulted in Property 'isURL' does not exist error
+// eslint-disable-next-line import/no-import-module-exports
+import validator from 'validator';
 import winston = require('winston');
 
 import utils = require('../utils');
@@ -7,8 +12,6 @@ import meta = require('../meta');
 import db = require('../database');
 import groups = require('../groups');
 import plugins = require('../plugins');
-
-import validator from 'validator';
 
 interface UserUpdateData {
     uid: number;
@@ -81,23 +84,25 @@ module.exports = function (User: UserModel) {
         }
         data.username = data.username?.trim();
 
-        let userData;
+        let userData: {username: string, userslug: string};
         if (uid) {
-            userData = await User.getUserFields(uid, ['username', 'userslug']);
+            userData = await User.getUserFields(uid, ['username', 'userslug']) as {username: string, userslug: string};
             if (userData.username === data.username) {
                 return;
             }
         }
-
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         if (data.username.length < meta.config.minimumUsernameLength) {
             throw new Error('[[error:username-too-short]]');
         }
-
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         if (data.username.length > meta.config.maximumUsernameLength) {
             throw new Error('[[error:username-too-long]]');
         }
 
-        const userslug = slugify(data.username);
+        const userslug: string = slugify(data.username) as string;
         if (!utils.isUserNameValid(data.username) || !userslug) {
             throw new Error('[[error:invalid-username]]');
         }
@@ -110,10 +115,10 @@ module.exports = function (User: UserModel) {
             throw new Error('[[error:username-taken]]');
         }
 
-        const { error } = await plugins.hooks.fire('filter:username.check', {
+        const { error } : {error: undefined} = await plugins.hooks.fire('filter:username.check', {
             username: data.username,
             error: undefined,
-        });
+        }) as {error: undefined};
         if (error) {
             throw error;
         }
