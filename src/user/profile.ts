@@ -9,52 +9,68 @@ import db from '../database';
 import groups from '../groups';
 import plugins from '../plugins';
 
-interface UserData {
-  userslug(arg0: string, uid: any, newUserslug: any, userslug: any): Promise<void>;
-  username(arg0: string, uid: any, newUsername: any, username: any): Promise<void>;
-  uid: number;
-  data: Record<string, any>;
-  fields: string[];
-}
-
 interface UserUpdateData {
-  uid: number;
-  username?: string;
-  email?: string;
-  fullname: string;
-  website?: string;
-  location?: string;
-  groupTitle?: string;
-  birthday?: string;
-  signature?: string;
-  aboutme?: string;
+    uid: number;
+    username?: string;
+    email?: string;
+    fullname: string;
+    website?: string;
+    location?: string;
+    groupTitle?: string;
+    birthday?: string;
+    signature?: string;
+    aboutme?: string;
 }
 
 interface UserChangePasswordData {
-  uid: number;
-  currentPassword?: string;
-  newPassword: string;
-  ip: string;
+    uid: number;
+    currentPassword?: string;
+    newPassword: string;
+    ip: string;
+    email: string;
 }
 
 export interface UserModel {
-  hashPassword(newPassword: string): unknown;
-  auth: any;
-  reset: any;
-  isPasswordCorrect(uid: number, currentPassword: string, ip: string): unknown;
-  hasPassword(uid: number): any;
-  isAdministrator(uid: number): any;
-  isPasswordValid(newPassword: string): unknown;
-  setUserField(uid: number, field: string, value: any): unknown;
-  email: any;
-  getUserField(uid: number, arg1: string): unknown;
-  checkUsername: (username: any, uid: number) => Promise<void>;
-  existsBySlug(userslug: any): unknown;
-  setUserFields(updateUid: number, updateData: {}): unknown;
-  getUserFields(updateUid: number, fields: string[]): unknown;
-  updateProfile: (uid: number, data: UserUpdateData, extraFields: string[] | undefined) => Promise<Record<string, any>>;
-  checkMinReputation: (callerUid: number, uid: number, setting: string) => Promise<void>;
-  changePassword: (uid: number, data: UserChangePasswordData) => Promise<void>;
+    updateProfile: (uid: number, data: UserUpdateData, extraFields: string[]) => Promise<unknown>;
+    hashPassword(newPassword: string): unknown;
+    isPasswordCorrect(uid: number, currentPassword: string, ip: string): unknown;
+    hasPassword(uid: number): boolean;
+    isAdministrator(uid: number): boolean;
+    isPasswordValid(newPassword: string): unknown;
+    setUserField(uid: number, field: string, value: string): unknown;
+    getUserField(uid: number, arg1: string): unknown;
+    checkUsername: (data: UserUpdateData, uid: number) => Promise<void>;
+    existsBySlug(userslug: string): unknown;
+    setUserFields(updateUid: number, updateData: unknown)
+    getUserFields(updateUid: number, fields: string[]): unknown;
+    checkMinReputation: (callerUid: number, uid: number, setting: string) => Promise<void>;
+    changePassword: (uid: number, data: UserChangePasswordData) => Promise<void>;
+    reset: ResetModule;
+    auth: AuthModule;
+    email: EmailModule;
+}
+
+// Define a type for the Reset module
+interface ResetModule {
+    cleanByUid(uid: number): Promise<void>;
+    updateExpiry(uid: number): Promise<void>;
+}
+
+// Define a type for the Auth module
+interface AuthModule {
+    revokeAllSessions(uid: number): Promise<void>;
+}
+
+// Define a type for the Email module
+interface EmailModule {
+    expireValidation(uid: number): Promise<void>;
+    sendValidationEmail(uid: number, options: SendValidationEmailOptions): Promise<void>;
+}
+
+// Define a type for the options parameter of sendValidationEmail
+interface SendValidationEmailOptions {
+    email: string;
+    force: number;
 }
 
 module.exports = function (User: UserModel) {
@@ -115,6 +131,7 @@ module.exports = function (User: UserModel) {
         ]);
     };
 
+
     async function validateData(callerUid: number, data: UserUpdateData) {
         isEmailValid(data);
         await isUsernameAvailable(data, data.uid);
@@ -142,28 +159,29 @@ module.exports = function (User: UserModel) {
         if (!data.username) {
             return;
         }
-        data.username = data.username?.trim();
-        let userData: {username: string; userslug: string;};
+        data.username = data.username?.trim() as string;
+
+        let userData;
         if (uid) {
-            const userData = (await User.getUserFields(uid, ['username', 'userslug'])) as { username: string; userslug: string } || { username: '', userslug: '' };
+            userData = await User.getUserFields(uid, ['username', 'userslug']);
             if (userData.username === data.username) {
                 return;
             }
         }
-        // The next line calls a function in a module that has not been updated to TS yet
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+
         if (data.username.length < meta.config.minimumUsernameLength) {
             throw new Error('[[error:username-too-short]]');
         }
-        // The next line calls a function in a module that has not been updated to TS yet
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+
         if (data.username.length > meta.config.maximumUsernameLength) {
             throw new Error('[[error:username-too-long]]');
         }
-        const userslug: string = slugify(data.username) as string;
+
+        const userslug = slugify(data.username);
         if (!utils.isUserNameValid(data.username) || !userslug) {
             throw new Error('[[error:invalid-username]]');
         }
+
         if (uid && userslug === userData.userslug) {
             return;
         }
@@ -171,17 +189,18 @@ module.exports = function (User: UserModel) {
         if (exists) {
             throw new Error('[[error:username-taken]]');
         }
-        const { error } : {username: string, error: undefined} = await plugins.hooks.fire('filter:username.check', {
+
+        const { error } = await plugins.hooks.fire('filter:username.check', {
             username: data.username,
             error: undefined,
-        }) as {username: string, error: undefined};
+        });
         if (error) {
             throw error;
         }
     }
-    User.checkUsername = async (data: UserUpdateData, uid: number) => isUsernameAvailable(data, uid);
+    User.checkUsername = async (username: UserUpdateData, uid: number) => isUsernameAvailable(username, uid);
 
-    async function isWebsiteValid(callerUid: number, data: UserUpdateData) {
+    async function isWebsiteValid(callerUid, data) {
         if (!data.website) {
             return;
         }
@@ -191,30 +210,23 @@ module.exports = function (User: UserModel) {
         await User.checkMinReputation(callerUid, data.uid, 'min:rep:website');
     }
 
-    async function isAboutMeValid(callerUid: number, data: UserUpdateData) {
+    async function isAboutMeValid(callerUid, data: UserUpdateData) {
         if (!data.aboutme) {
             return;
         }
-        // The next line calls a function in a module that has not been updated to TS yet
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         if (data.aboutme !== undefined && data.aboutme.length > meta.config.maximumAboutMeLength) {
-            // The next line calls a function in a module that has not been updated to TS yet
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             throw new Error(`[[error:about-me-too-long, ${String(meta.config.maximumAboutMeLength)}]]`);
         }
+
         await User.checkMinReputation(callerUid, data.uid, 'min:rep:aboutme');
     }
 
-    async function isSignatureValid(callerUid: number, data : UserUpdateData) {
+    async function isSignatureValid(callerUid, data : UserUpdateData) {
         if (!data.signature) {
             return;
         }
         const signature = data.signature.replace(/\r\n/g, '\n');
-        // The next line calls a function in a module that has not been updated to TS yet
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         if (signature.length > meta.config.maximumSignatureLength) {
-            // The next line calls a function in a module that has not been updated to TS yet
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             throw new Error(`[[error:signature-too-long, ${String(meta.config.maximumSignatureLength)}]]`);
         }
         await User.checkMinReputation(callerUid, data.uid, 'min:rep:signature');
@@ -266,7 +278,7 @@ module.exports = function (User: UserModel) {
         // The next line calls a function in a module that has not been updated to TS yet
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         if (!meta.config.allowMultipleBadges && groupTitles.length > 1) {
-            data.groupTitle = JSON.stringify(groupTitles[0]);
+            data.groupTitle = JSON.stringify(groupTitles[0]) as string;
         }
     }
 
@@ -285,7 +297,7 @@ module.exports = function (User: UserModel) {
         if (reputation < meta.config[setting]) {
             // The next line calls a function in a module that has not been updated to TS yet
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            throw new Error(`[[error:not-enough-reputation-${setting.replace(/:/g, '-')}, ${String(meta.config[setting])}]]`);
+            throw new Error(`[[error:not-enough-reputation-${setting.replace(/:/g, '-')}, ${meta.config[setting]}]]`);
         }
     };
 
@@ -305,7 +317,7 @@ module.exports = function (User: UserModel) {
                 force: 1,
             // The next line calls a function in a module that has not been updated to TS yet
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            }).catch(err => winston.error(`[user.create] Validation email failed to send\n[emailer.send] ${String(err.stack)}`));
+            }).catch(err => winston.error(`[user.create] Validation email failed to send\n[emailer.send] ${err.stack}`));
         }
     }
 
@@ -369,54 +381,71 @@ module.exports = function (User: UserModel) {
             }
         }
     }
-    User.changePassword = async function (uid, data) {
-        if (uid <= 0 || !data || !data.uid) {
-            throw new Error('[[error:invalid-uid]]');
-        }
-        User.isPasswordValid(data.newPassword);
-        const [isAdmin, hasPassword] : boolean[] = await Promise.all([
-            User.isAdministrator(uid),
-            User.hasPassword(uid),
-        ] as boolean[]);
-        // The next line calls a function in a module that has not been updated to TS yet
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        if (meta.config['password:disableEdit'] && !isAdmin) {
-            throw new Error('[[error:no-privileges]]');
-        }
-        const roundedNumber1: number = Math.round(uid * 10) / 10;
-        const roundedNumber2: number = Math.round(data.uid * 10) / 10;
-        const isSelf = roundedNumber1 === roundedNumber2;
-        if (!isAdmin && !isSelf) {
-            throw new Error('[[user:change_password_error_privileges]]');
-        }
-        if (isSelf && hasPassword) {
-            const correct = await User.isPasswordCorrect(data.uid, data.currentPassword, data.ip);
-            if (!correct) {
-                throw new Error('[[user:change_password_error_wrong_current]]');
+
+    User.changePassword = async function (uid: number, data: UserChangePasswordData) {
+        try {
+            if (uid <= 0 || !data || !data.uid) {
+                throw new Error('[[error:invalid-uid]]');
             }
-        }
-        const hashedPassword = await User.hashPassword(data.newPassword);
-        await Promise.all([
-            User.setUserFields(data.uid, {
-                password: hashedPassword,
-                'password:shaWrapped': 1,
+            User.isPasswordValid(data.newPassword);
+            const [isAdmin, hasPassword]: boolean[] = await Promise.all([
+                User.isAdministrator(uid),
+                User.hasPassword(uid),
+            ] as boolean[]);
+            // The next line calls a function in a module that has not been updated to TS yet
+            /* eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,
+                @typescript-eslint/no-unsafe-call */
+            if (meta.config['password:disableEdit'] && !isAdmin) {
+                throw new Error('[[error:no-privileges]]');
+            }
+            const roundedNumber1: number = Math.round(uid * 10) / 10;
+            const roundedNumber2: number = Math.round(data.uid * 10) / 10;
+            const isSelf = roundedNumber1 === roundedNumber2;
+            if (!isAdmin && !isSelf) {
+                throw new Error('[[user:change_password_error_privileges]]');
+            }
+            if (isSelf && hasPassword) {
+                const correct = await User.isPasswordCorrect(data.uid, data.currentPassword, data.ip);
+                if (!correct) {
+                    throw new Error('[[user:change_password_error_wrong_current]]');
+                }
+            }
+            const hashedPassword = await User.hashPassword(data.newPassword);
+            await Promise.all([
+                User.setUserFields(data.uid, {
+                    password: hashedPassword,
+                    'password:shaWrapped': 1,
+                    // The next line calls a function in a module that has not been updated to TS yet
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+                    rss_token: utils.generateUUID() as number,
+                }),
                 // The next line calls a function in a module that has not been updated to TS yet
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-                rss_token: utils.generateUUID() as number,
-            }),
-            // The next line calls a function in a module that has not been updated to TS yet
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            User.reset.cleanByUid(data.uid),
-            // The next line calls a function in a module that has not been updated to TS yet
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            User.reset.updateExpiry(data.uid),
-            // The next line calls a function in a module that has not been updated to TS yet
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            User.auth.revokeAllSessions(data.uid),
-            // The next line calls a function in a module that has not been updated to TS yet
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            User.email.expireValidation(data.uid),
-        ]);
-        plugins.hooks.fire('action:password.change', { uid: uid, targetUid: data.uid });
+                /* eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,
+                @typescript-eslint/no-unsafe-call */
+                User.reset.cleanByUid(data.uid),
+                // The next line calls a function in a module that has not been updated to TS yet
+                /* eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,
+                @typescript-eslint/no-unsafe-call */
+                User.reset.updateExpiry(data.uid),
+                // The next line calls a function in a module that has not been updated to TS yet
+                /* eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,
+                @typescript-eslint/no-unsafe-call */
+                User.auth.revokeAllSessions(data.uid),
+                // The next line calls a function in a module that has not been updated to TS yet
+                /* eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,
+                @typescript-eslint/no-unsafe-call */
+                User.email.expireValidation(data.uid),
+            ]);
+            // Handle plugins.hooks.fire separately if it's not a promise
+            const hookResult = plugins.hooks.fire('action:password.change', { uid: uid, targetUid: data.uid });
+            // Check if it's a promise and wait for it if needed
+            if (hookResult instanceof Promise) {
+                await hookResult;
+            }
+        } catch (error) {
+            // Handle errors here, e.g., log the error or perform some other action.
+            console.error(error);
+            throw error; // Rethrow the error if needed
+        }
     };
 };
