@@ -21,7 +21,7 @@ const meta_1 = __importDefault(require("../meta"));
 const database_1 = __importDefault(require("../database"));
 const groups_1 = __importDefault(require("../groups"));
 const plugins_1 = __importDefault(require("../plugins"));
-function default_1(User) {
+module.exports = function (User) {
     function isEmailValid(data) {
         if (!data.email) {
             return;
@@ -406,5 +406,4 @@ function default_1(User) {
             }
         });
     };
-}
-exports.default = default_1;
+};

@@ -51,7 +51,7 @@ export interface UserModel {
   changePassword: (uid: number, data: UserChangePasswordData) => Promise<void>;
 }
 
-export default function (User: UserModel) {
+module.exports = function (User: UserModel) {
     function isEmailValid(data: UserUpdateData) {
         if (!data.email) {
             return;
@@ -447,4 +447,4 @@ export default function (User: UserModel) {
             throw error; // Rethrow the error if needed
         }
     };
-}
+};
