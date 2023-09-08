@@ -115,14 +115,18 @@ module.exports = function (User) {
             data.username = (_a = data.username) === null || _a === void 0 ? void 0 : _a.trim();
             let userData;
             if (uid) {
-                userData = yield User.getUserFields(uid, ['username', 'userslug']);
+                const userData = (yield User.getUserFields(uid, ['username', 'userslug'])) || { username: '', userslug: '' };
                 if (userData.username === data.username) {
                     return;
                 }
             }
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             if (data.username.length < meta_1.default.config.minimumUsernameLength) {
                 throw new Error('[[error:username-too-short]]');
             }
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             if (data.username.length > meta_1.default.config.maximumUsernameLength) {
                 throw new Error('[[error:username-too-long]]');
             }
@@ -146,7 +150,7 @@ module.exports = function (User) {
             }
         });
     }
-    User.checkUsername = (username, uid) => __awaiter(this, void 0, void 0, function* () { return isUsernameAvailable(username, uid); });
+    User.checkUsername = (data, uid) => __awaiter(this, void 0, void 0, function* () { return isUsernameAvailable(data, uid); });
     function isWebsiteValid(callerUid, data) {
         return __awaiter(this, void 0, void 0, function* () {
             if (!data.website) {

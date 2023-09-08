@@ -159,29 +159,28 @@ module.exports = function (User: UserModel) {
         if (!data.username) {
             return;
         }
-        data.username = data.username?.trim() as string;
-
-        let userData;
+        data.username = data.username?.trim();
+        let userData: {username: string; userslug: string;};
         if (uid) {
-            userData = await User.getUserFields(uid, ['username', 'userslug']);
+            const userData = (await User.getUserFields(uid, ['username', 'userslug'])) as { username: string; userslug: string } || { username: '', userslug: '' };
             if (userData.username === data.username) {
                 return;
             }
         }
-
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         if (data.username.length < meta.config.minimumUsernameLength) {
             throw new Error('[[error:username-too-short]]');
         }
-
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         if (data.username.length > meta.config.maximumUsernameLength) {
             throw new Error('[[error:username-too-long]]');
         }
-
-        const userslug = slugify(data.username);
+        const userslug: string = slugify(data.username) as string;
         if (!utils.isUserNameValid(data.username) || !userslug) {
             throw new Error('[[error:invalid-username]]');
         }
-
         if (uid && userslug === userData.userslug) {
             return;
         }
@@ -189,16 +188,15 @@ module.exports = function (User: UserModel) {
         if (exists) {
             throw new Error('[[error:username-taken]]');
         }
-
-        const { error } = await plugins.hooks.fire('filter:username.check', {
+        const { error } : {username: string, error: undefined} = await plugins.hooks.fire('filter:username.check', {
             username: data.username,
             error: undefined,
-        });
+        }) as {username: string, error: undefined};
         if (error) {
             throw error;
         }
     }
-    User.checkUsername = async (username: UserUpdateData, uid: number) => isUsernameAvailable(username, uid);
+    User.checkUsername = async (data: UserUpdateData, uid: number) => isUsernameAvailable(data, uid);
 
     async function isWebsiteValid(callerUid, data) {
         if (!data.website) {
