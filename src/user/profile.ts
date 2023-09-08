@@ -1,13 +1,14 @@
-import _ from 'lodash';
-import validator from 'validator';
-import winston from 'winston';
+import _ = require('lodash');
+import winston = require('winston');
 
-import utils from '../utils';
-import slugify from '../slugify';
-import meta from '../meta';
-import db from '../database';
-import groups from '../groups';
-import plugins from '../plugins';
+import utils = require('../utils');
+import slugify = require('../slugify');
+import meta = require('../meta');
+import db = require('../database');
+import groups = require('../groups');
+import plugins = require('../plugins');
+
+import validator from 'validator';
 
 interface UserUpdateData {
     uid: number;
@@ -78,7 +79,7 @@ module.exports = function (User: UserModel) {
         if (!data.username) {
             return;
         }
-        data.username = data.username?.trim() as string;
+        data.username = data.username?.trim();
 
         let userData;
         if (uid) {

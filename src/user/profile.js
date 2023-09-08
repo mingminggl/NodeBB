@@ -12,15 +12,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const lodash_1 = __importDefault(require("lodash"));
+const _ = require("lodash");
+const winston = require("winston");
+const utils = require("../utils");
+const slugify = require("../slugify");
+const meta = require("../meta");
+const db = require("../database");
+const groups = require("../groups");
+const plugins = require("../plugins");
 const validator_1 = __importDefault(require("validator"));
-const winston_1 = __importDefault(require("winston"));
-const utils_1 = __importDefault(require("../utils"));
-const slugify_1 = __importDefault(require("../slugify"));
-const meta_1 = __importDefault(require("../meta"));
-const database_1 = __importDefault(require("../database"));
-const groups_1 = __importDefault(require("../groups"));
-const plugins_1 = __importDefault(require("../plugins"));
 module.exports = function (User) {
     function isUsernameAvailable(data, uid) {
         var _a;
@@ -36,14 +36,14 @@ module.exports = function (User) {
                     return;
                 }
             }
-            if (data.username.length < meta_1.default.config.minimumUsernameLength) {
+            if (data.username.length < meta.config.minimumUsernameLength) {
                 throw new Error('[[error:username-too-short]]');
             }
-            if (data.username.length > meta_1.default.config.maximumUsernameLength) {
+            if (data.username.length > meta.config.maximumUsernameLength) {
                 throw new Error('[[error:username-too-long]]');
             }
-            const userslug = (0, slugify_1.default)(data.username);
-            if (!utils_1.default.isUserNameValid(data.username) || !userslug) {
+            const userslug = slugify(data.username);
+            if (!utils.isUserNameValid(data.username) || !userslug) {
                 throw new Error('[[error:invalid-username]]');
             }
             if (uid && userslug === userData.userslug) {
@@ -53,7 +53,7 @@ module.exports = function (User) {
             if (exists) {
                 throw new Error('[[error:username-taken]]');
             }
-            const { error } = yield plugins_1.default.hooks.fire('filter:username.check', {
+            const { error } = yield plugins.hooks.fire('filter:username.check', {
                 username: data.username,
                 error: undefined,
             });
@@ -81,10 +81,10 @@ module.exports = function (User) {
             }
             // The next line calls a function in a module that has not been updated to TS yet
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            if (data.aboutme !== undefined && data.aboutme.length > meta_1.default.config.maximumAboutMeLength) {
+            if (data.aboutme !== undefined && data.aboutme.length > meta.config.maximumAboutMeLength) {
                 // The next line calls a function in a module that has not been updated to TS yet
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-                throw new Error(`[[error:about-me-too-long, ${String(meta_1.default.config.maximumAboutMeLength)}]]`);
+                throw new Error(`[[error:about-me-too-long, ${String(meta.config.maximumAboutMeLength)}]]`);
             }
             yield User.checkMinReputation(callerUid, data.uid, 'min:rep:aboutme');
         });
@@ -97,10 +97,10 @@ module.exports = function (User) {
             const signature = data.signature.replace(/\r\n/g, '\n');
             // The next line calls a function in a module that has not been updated to TS yet
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            if (signature.length > meta_1.default.config.maximumSignatureLength) {
+            if (signature.length > meta.config.maximumSignatureLength) {
                 // The next line calls a function in a module that has not been updated to TS yet
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-                throw new Error(`[[error:signature-too-long, ${String(meta_1.default.config.maximumSignatureLength)}]]`);
+                throw new Error(`[[error:signature-too-long, ${String(meta.config.maximumSignatureLength)}]]`);
             }
             yield User.checkMinReputation(callerUid, data.uid, 'min:rep:signature');
         });
@@ -126,7 +126,7 @@ module.exports = function (User) {
     }
     function isGroupTitleValid(data) {
         function checkTitle(title) {
-            if (title === 'registered-users' || groups_1.default.isPrivilegeGroup(title)) {
+            if (title === 'registered-users' || groups.isPrivilegeGroup(title)) {
                 throw new Error('[[error:invalid-group-title]]');
             }
         }
@@ -147,7 +147,7 @@ module.exports = function (User) {
         }
         // The next line calls a function in a module that has not been updated to TS yet
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        if (!meta_1.default.config.allowMultipleBadges && groupTitles.length > 1) {
+        if (!meta.config.allowMultipleBadges && groupTitles.length > 1) {
             data.groupTitle = JSON.stringify(groupTitles[0]);
         }
     }
@@ -156,7 +156,7 @@ module.exports = function (User) {
             return;
         }
         data.email = data.email.trim();
-        if (!utils_1.default.isEmailValid(data.email)) {
+        if (!utils.isEmailValid(data.email)) {
             throw new Error('[[error:invalid-email]]');
         }
     }
@@ -180,16 +180,16 @@ module.exports = function (User) {
             const isSelf = roundedNumber1 === roundedNumber2;
             // The next line calls a function in a module that has not been updated to TS yet
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            if (!isSelf || meta_1.default.config['reputation:disabled']) {
+            if (!isSelf || meta.config['reputation:disabled']) {
                 return;
             }
             const reputation = yield User.getUserField(uid, 'reputation');
             // The next line calls a function in a module that has not been updated to TS yet
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            if (reputation < meta_1.default.config[setting]) {
+            if (reputation < meta.config[setting]) {
                 // The next line calls a function in a module that has not been updated to TS yet
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-                throw new Error(`[[error:not-enough-reputation-${setting.replace(/:/g, '-')}, ${String(meta_1.default.config[setting])}]]`);
+                throw new Error(`[[error:not-enough-reputation-${setting.replace(/:/g, '-')}, ${String(meta.config[setting])}]]`);
             }
         });
     };
@@ -209,7 +209,7 @@ module.exports = function (User) {
                     force: 1,
                     // The next line calls a function in a module that has not been updated to TS yet
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-                }).catch(err => winston_1.default.error(`[user.create] Validation email failed to send\n[emailer.send] ${String(err.stack)}`));
+                }).catch(err => winston.error(`[user.create] Validation email failed to send\n[emailer.send] ${String(err.stack)}`));
             }
         });
     }
@@ -220,12 +220,12 @@ module.exports = function (User) {
             }
             // The next line calls a function in a module that has not been updated to TS yet
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            yield database_1.default.sortedSetRemove(`${field}:uid`, oldValue);
+            yield db.sortedSetRemove(`${field}:uid`, oldValue);
             yield User.setUserField(uid, field, value);
             if (value) {
                 // The next line calls a function in a module that has not been updated to TS yet
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-                yield database_1.default.sortedSetAdd(`${field}:uid`, uid, value);
+                yield db.sortedSetAdd(`${field}:uid`, uid, value);
             }
         });
     }
@@ -238,21 +238,21 @@ module.exports = function (User) {
             if (userData.username === newUsername) {
                 return;
             }
-            const newUserslug = (0, slugify_1.default)(newUsername);
+            const newUserslug = slugify(newUsername);
             const now = Date.now();
             yield Promise.all([
                 updateUidMapping('username', uid, newUsername, userData.username),
                 updateUidMapping('userslug', uid, newUserslug, userData.userslug),
                 // The next line calls a function in a module that has not been updated to TS yet
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-                database_1.default.sortedSetAdd(`user:${uid}:usernames`, now, `${newUsername}:${now}`),
+                db.sortedSetAdd(`user:${uid}:usernames`, now, `${newUsername}:${now}`),
             ]);
             // The next line calls a function in a module that has not been updated to TS yet
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            yield database_1.default.sortedSetRemove('username:sorted', `${userData.username.toLowerCase()}:${uid}`);
+            yield db.sortedSetRemove('username:sorted', `${userData.username.toLowerCase()}:${uid}`);
             // The next line calls a function in a module that has not been updated to TS yet
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            yield database_1.default.sortedSetAdd('username:sorted', 0, `${newUsername.toLowerCase()}:${uid}`);
+            yield db.sortedSetAdd('username:sorted', 0, `${newUsername.toLowerCase()}:${uid}`);
         });
     }
     function updateFullname(uid, newFullname) {
@@ -265,12 +265,12 @@ module.exports = function (User) {
                 if (fullname) {
                     // The next line calls a function in a module that has not been updated to TS yet
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-                    yield database_1.default.sortedSetRemove('fullname:sorted', `${fullname.toLowerCase()}:${uid}`);
+                    yield db.sortedSetRemove('fullname:sorted', `${fullname.toLowerCase()}:${uid}`);
                 }
                 if (newFullname) {
                     // The next line calls a function in a module that has not been updated to TS yet
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-                    yield database_1.default.sortedSetAdd('fullname:sorted', 0, `${newFullname.toLowerCase()}:${uid}`);
+                    yield db.sortedSetAdd('fullname:sorted', 0, `${newFullname.toLowerCase()}:${uid}`);
                 }
             }
         });
@@ -282,13 +282,13 @@ module.exports = function (User) {
                 'groupTitle', 'birthday', 'signature', 'aboutme',
             ];
             if (Array.isArray(extraFields)) {
-                fields = lodash_1.default.uniq(fields.concat(extraFields));
+                fields = _.uniq(fields.concat(extraFields));
             }
             if (!data.uid) {
                 throw new Error('[[error:invalid-update-uid]]');
             }
             const updateUid = data.uid;
-            const result = yield plugins_1.default.hooks.fire('filter:user.updateProfile', {
+            const result = yield plugins.hooks.fire('filter:user.updateProfile', {
                 uid: uid,
                 data: data,
                 fields: fields,
@@ -317,7 +317,7 @@ module.exports = function (User) {
             if (Object.keys(updateData).length) {
                 yield User.setUserFields(updateUid, updateData);
             }
-            const hookResult = plugins_1.default.hooks.fire('action:password.change', {
+            const hookResult = plugins.hooks.fire('action:password.change', {
                 uid: uid,
                 data: data,
                 fields: fields,
@@ -347,7 +347,7 @@ module.exports = function (User) {
                 // The next line calls a function in a module that has not been updated to TS yet
                 /* eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,
                     @typescript-eslint/no-unsafe-call */
-                if (meta_1.default.config['password:disableEdit'] && !isAdmin) {
+                if (meta.config['password:disableEdit'] && !isAdmin) {
                     throw new Error('[[error:no-privileges]]');
                 }
                 const roundedNumber1 = Math.round(uid * 10) / 10;
@@ -369,7 +369,7 @@ module.exports = function (User) {
                         'password:shaWrapped': 1,
                         // The next line calls a function in a module that has not been updated to TS yet
                         // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-                        rss_token: utils_1.default.generateUUID(),
+                        rss_token: utils.generateUUID(),
                     }),
                     // The next line calls a function in a module that has not been updated to TS yet
                     /* eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,
@@ -389,7 +389,7 @@ module.exports = function (User) {
                     User.email.expireValidation(data.uid),
                 ]);
                 // Handle plugins.hooks.fire separately if it's not a promise
-                const hookResult = plugins_1.default.hooks.fire('action:password.change', { uid: uid, targetUid: data.uid });
+                const hookResult = plugins.hooks.fire('action:password.change', { uid: uid, targetUid: data.uid });
                 // Check if it's a promise and wait for it if needed
                 if (hookResult instanceof Promise) {
                     yield hookResult;
