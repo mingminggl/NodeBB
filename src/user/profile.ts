@@ -159,28 +159,29 @@ module.exports = function (User: UserModel) {
         if (!data.username) {
             return;
         }
-        data.username = data.username?.trim();
-        let userData: {username: string; userslug: string;};
+        data.username = data.username?.trim() as string;
+
+        let userData;
         if (uid) {
-            const userData = (await User.getUserFields(uid, ['username', 'userslug'])) as { username: string; userslug: string } || { username: '', userslug: '' };
+            userData = await User.getUserFields(uid, ['username', 'userslug']);
             if (userData.username === data.username) {
                 return;
             }
         }
-        // The next line calls a function in a module that has not been updated to TS yet
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+
         if (data.username.length < meta.config.minimumUsernameLength) {
             throw new Error('[[error:username-too-short]]');
         }
-        // The next line calls a function in a module that has not been updated to TS yet
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+
         if (data.username.length > meta.config.maximumUsernameLength) {
             throw new Error('[[error:username-too-long]]');
         }
-        const userslug: string = slugify(data.username) as string;
+
+        const userslug = slugify(data.username);
         if (!utils.isUserNameValid(data.username) || !userslug) {
             throw new Error('[[error:invalid-username]]');
         }
+
         if (uid && userslug === userData.userslug) {
             return;
         }
@@ -188,15 +189,17 @@ module.exports = function (User: UserModel) {
         if (exists) {
             throw new Error('[[error:username-taken]]');
         }
-        const { error } : {username: string, error: undefined} = await plugins.hooks.fire('filter:username.check', {
+
+        const { error } = await plugins.hooks.fire('filter:username.check', {
             username: data.username,
             error: undefined,
-        }) as {username: string, error: undefined};
+        });
         if (error) {
             throw error;
         }
     }
-    User.checkUsername = async (data: UserUpdateData, uid: number) => isUsernameAvailable(data, uid);
+    User.checkUsername = async (username: UserUpdateData, uid: number) => isUsernameAvailable(username, uid);
+
 
     async function isWebsiteValid(callerUid, data) {
         if (!data.website) {
@@ -208,23 +211,31 @@ module.exports = function (User: UserModel) {
         await User.checkMinReputation(callerUid, data.uid, 'min:rep:website');
     }
 
-    async function isAboutMeValid(callerUid, data: UserUpdateData) {
+    async function isAboutMeValid(callerUid: number, data: UserUpdateData) {
         if (!data.aboutme) {
             return;
         }
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         if (data.aboutme !== undefined && data.aboutme.length > meta.config.maximumAboutMeLength) {
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             throw new Error(`[[error:about-me-too-long, ${String(meta.config.maximumAboutMeLength)}]]`);
         }
 
         await User.checkMinReputation(callerUid, data.uid, 'min:rep:aboutme');
     }
 
-    async function isSignatureValid(callerUid, data : UserUpdateData) {
+    async function isSignatureValid(callerUid: number, data : UserUpdateData) {
         if (!data.signature) {
             return;
         }
         const signature = data.signature.replace(/\r\n/g, '\n');
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         if (signature.length > meta.config.maximumSignatureLength) {
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             throw new Error(`[[error:signature-too-long, ${String(meta.config.maximumSignatureLength)}]]`);
         }
         await User.checkMinReputation(callerUid, data.uid, 'min:rep:signature');
@@ -276,11 +287,11 @@ module.exports = function (User: UserModel) {
         // The next line calls a function in a module that has not been updated to TS yet
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         if (!meta.config.allowMultipleBadges && groupTitles.length > 1) {
-            data.groupTitle = JSON.stringify(groupTitles[0]) as string;
+            data.groupTitle = JSON.stringify(groupTitles[0]);
         }
     }
 
-    User.checkMinReputation = async function (callerUid, uid, setting) {
+    User.checkMinReputation = async function (callerUid: number, uid: number, setting) {
         const roundedNumber1: number = Math.round(uid * 10) / 10;
         const roundedNumber2: number = Math.round(callerUid * 10) / 10;
         const isSelf = roundedNumber1 === roundedNumber2;
@@ -295,7 +306,7 @@ module.exports = function (User: UserModel) {
         if (reputation < meta.config[setting]) {
             // The next line calls a function in a module that has not been updated to TS yet
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            throw new Error(`[[error:not-enough-reputation-${setting.replace(/:/g, '-')}, ${meta.config[setting]}]]`);
+            throw new Error(`[[error:not-enough-reputation-${setting.replace(/:/g, '-')}, ${String(meta.config[setting])}]]`);
         }
     };
 
@@ -315,7 +326,7 @@ module.exports = function (User: UserModel) {
                 force: 1,
             // The next line calls a function in a module that has not been updated to TS yet
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            }).catch(err => winston.error(`[user.create] Validation email failed to send\n[emailer.send] ${err.stack}`));
+            }).catch(err => winston.error(`[user.create] Validation email failed to send\n[emailer.send] ${String(err.stack)}`));
         }
     }
 
