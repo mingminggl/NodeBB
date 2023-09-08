@@ -74,87 +74,6 @@ interface SendValidationEmailOptions {
 }
 
 module.exports = function (User: UserModel) {
-    // The next line calls a function in a module that has not been updated to TS yet
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-    User.updateProfile = async function (uid: number, data: UserUpdateData, extraFields) {
-        let fields: string[] = [
-            'username', 'email', 'fullname', 'website', 'location',
-            'groupTitle', 'birthday', 'signature', 'aboutme',
-        ] as string[];
-        if (Array.isArray(extraFields)) {
-            fields = _.uniq(fields.concat(extraFields));
-        }
-        if (!data.uid) {
-            throw new Error('[[error:invalid-update-uid]]');
-        }
-        const updateUid = data.uid;
-        const result: {uid: number, data: UserUpdateData, fields: string[]} = await plugins.hooks.fire('filter:user.updateProfile', {
-            uid: uid,
-            data: data,
-            fields: fields,
-        }) as {uid: number, data: UserUpdateData, fields: string[]};
-        fields = result.fields;
-        data = result.data;
-        await validateData(uid, data);
-        const oldData = await User.getUserFields(updateUid, fields);
-        const updateData = {};
-        await Promise.all(fields.map(async (field) => {
-            if (!(data[field] !== undefined && typeof data[field] === 'string')) {
-                return;
-            }
-            data[field] = (data[field] as string).trim();
-            if (field === 'email') {
-                return await updateEmail(updateUid, data.email);
-            } else if (field === 'username') {
-                return await updateUsername(updateUid, data.username);
-            } else if (field === 'fullname') {
-                return await updateFullname(updateUid, data.fullname);
-            }
-            updateData[field] = data[field] as UserUpdateData;
-        }));
-        if (Object.keys(updateData).length) {
-            await User.setUserFields(updateUid, updateData);
-        }
-        const hookResult = plugins.hooks.fire('action:password.change', {
-            uid: uid,
-            data: data,
-            fields: fields,
-            oldData: oldData,
-        });
-        // Check if it's a promise and wait for it if needed
-        if (hookResult instanceof Promise) {
-            await hookResult;
-        }
-        return await User.getUserFields(updateUid, [
-            'email', 'username', 'userslug',
-            'picture', 'icon:text', 'icon:bgColor',
-        ]);
-    };
-
-
-    async function validateData(callerUid: number, data: UserUpdateData) {
-        isEmailValid(data);
-        await isUsernameAvailable(data, data.uid);
-        await isWebsiteValid(callerUid, data);
-        await isAboutMeValid(callerUid, data);
-        await isSignatureValid(callerUid, data);
-        isFullnameValid(data);
-        isLocationValid(data);
-        isBirthdayValid(data);
-        isGroupTitleValid(data);
-    }
-
-    async function isEmailValid(data: UserUpdateData) {
-        if (!data.email) {
-            return;
-        }
-
-        data.email = data.email.trim();
-        if (!utils.isEmailValid(data.email)) {
-            throw new Error('[[error:invalid-email]]');
-        }
-    }
-
     async function isUsernameAvailable(data: UserUpdateData, uid: number) {
         if (!data.username) {
             return;
@@ -201,7 +120,7 @@ module.exports = function (User: UserModel) {
     User.checkUsername = async (username: UserUpdateData, uid: number) => isUsernameAvailable(username, uid);
 
 
-    async function isWebsiteValid(callerUid, data) {
+    async function isWebsiteValid(callerUid: number, data: UserUpdateData) {
         if (!data.website) {
             return;
         }
@@ -289,6 +208,29 @@ module.exports = function (User: UserModel) {
         if (!meta.config.allowMultipleBadges && groupTitles.length > 1) {
             data.groupTitle = JSON.stringify(groupTitles[0]);
         }
+    }
+
+    function isEmailValid(data: UserUpdateData) {
+        if (!data.email) {
+            return;
+        }
+
+        data.email = data.email.trim();
+        if (!utils.isEmailValid(data.email)) {
+            throw new Error('[[error:invalid-email]]');
+        }
+    }
+
+    async function validateData(callerUid: number, data: UserUpdateData) {
+        isEmailValid(data);
+        await isUsernameAvailable(data, data.uid);
+        await isWebsiteValid(callerUid, data);
+        await isAboutMeValid(callerUid, data);
+        await isSignatureValid(callerUid, data);
+        isFullnameValid(data);
+        isLocationValid(data);
+        isBirthdayValid(data);
+        isGroupTitleValid(data);
     }
 
     User.checkMinReputation = async function (callerUid: number, uid: number, setting) {
@@ -390,6 +332,61 @@ module.exports = function (User: UserModel) {
             }
         }
     }
+
+    User.updateProfile = async function (uid: number, data: UserUpdateData, extraFields) {
+        let fields: string[] = [
+            'username', 'email', 'fullname', 'website', 'location',
+            'groupTitle', 'birthday', 'signature', 'aboutme',
+        ] as string[];
+        if (Array.isArray(extraFields)) {
+            fields = _.uniq(fields.concat(extraFields));
+        }
+        if (!data.uid) {
+            throw new Error('[[error:invalid-update-uid]]');
+        }
+        const updateUid = data.uid;
+        const result: {uid: number, data: UserUpdateData, fields: string[]} = await plugins.hooks.fire('filter:user.updateProfile', {
+            uid: uid,
+            data: data,
+            fields: fields,
+        }) as {uid: number, data: UserUpdateData, fields: string[]};
+        fields = result.fields;
+        data = result.data;
+        await validateData(uid, data);
+        const oldData = await User.getUserFields(updateUid, fields);
+        const updateData = {};
+        await Promise.all(fields.map(async (field) => {
+            if (!(data[field] !== undefined && typeof data[field] === 'string')) {
+                return;
+            }
+            data[field] = (data[field] as string).trim();
+            if (field === 'email') {
+                return await updateEmail(updateUid, data.email);
+            } else if (field === 'username') {
+                return await updateUsername(updateUid, data.username);
+            } else if (field === 'fullname') {
+                return await updateFullname(updateUid, data.fullname);
+            }
+            updateData[field] = data[field] as UserUpdateData;
+        }));
+        if (Object.keys(updateData).length) {
+            await User.setUserFields(updateUid, updateData);
+        }
+        const hookResult = plugins.hooks.fire('action:password.change', {
+            uid: uid,
+            data: data,
+            fields: fields,
+            oldData: oldData,
+        });
+        // Check if it's a promise and wait for it if needed
+        if (hookResult instanceof Promise) {
+            await hookResult;
+        }
+        return await User.getUserFields(updateUid, [
+            'email', 'username', 'userslug',
+            'picture', 'icon:text', 'icon:bgColor',
+        ]);
+    };
 
     User.changePassword = async function (uid: number, data: UserChangePasswordData) {
         try {

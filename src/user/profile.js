@@ -22,90 +22,6 @@ const database_1 = __importDefault(require("../database"));
 const groups_1 = __importDefault(require("../groups"));
 const plugins_1 = __importDefault(require("../plugins"));
 module.exports = function (User) {
-    // The next line calls a function in a module that has not been updated to TS yet
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-    User.updateProfile = function (uid, data, extraFields) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let fields = [
-                'username', 'email', 'fullname', 'website', 'location',
-                'groupTitle', 'birthday', 'signature', 'aboutme',
-            ];
-            if (Array.isArray(extraFields)) {
-                fields = lodash_1.default.uniq(fields.concat(extraFields));
-            }
-            if (!data.uid) {
-                throw new Error('[[error:invalid-update-uid]]');
-            }
-            const updateUid = data.uid;
-            const result = yield plugins_1.default.hooks.fire('filter:user.updateProfile', {
-                uid: uid,
-                data: data,
-                fields: fields,
-            });
-            fields = result.fields;
-            data = result.data;
-            yield validateData(uid, data);
-            const oldData = yield User.getUserFields(updateUid, fields);
-            const updateData = {};
-            yield Promise.all(fields.map((field) => __awaiter(this, void 0, void 0, function* () {
-                if (!(data[field] !== undefined && typeof data[field] === 'string')) {
-                    return;
-                }
-                data[field] = data[field].trim();
-                if (field === 'email') {
-                    return yield updateEmail(updateUid, data.email);
-                }
-                else if (field === 'username') {
-                    return yield updateUsername(updateUid, data.username);
-                }
-                else if (field === 'fullname') {
-                    return yield updateFullname(updateUid, data.fullname);
-                }
-                updateData[field] = data[field];
-            })));
-            if (Object.keys(updateData).length) {
-                yield User.setUserFields(updateUid, updateData);
-            }
-            const hookResult = plugins_1.default.hooks.fire('action:password.change', {
-                uid: uid,
-                data: data,
-                fields: fields,
-                oldData: oldData,
-            });
-            // Check if it's a promise and wait for it if needed
-            if (hookResult instanceof Promise) {
-                yield hookResult;
-            }
-            return yield User.getUserFields(updateUid, [
-                'email', 'username', 'userslug',
-                'picture', 'icon:text', 'icon:bgColor',
-            ]);
-        });
-    };
-    function validateData(callerUid, data) {
-        return __awaiter(this, void 0, void 0, function* () {
-            isEmailValid(data);
-            yield isUsernameAvailable(data, data.uid);
-            yield isWebsiteValid(callerUid, data);
-            yield isAboutMeValid(callerUid, data);
-            yield isSignatureValid(callerUid, data);
-            isFullnameValid(data);
-            isLocationValid(data);
-            isBirthdayValid(data);
-            isGroupTitleValid(data);
-        });
-    }
-    function isEmailValid(data) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (!data.email) {
-                return;
-            }
-            data.email = data.email.trim();
-            if (!utils_1.default.isEmailValid(data.email)) {
-                throw new Error('[[error:invalid-email]]');
-            }
-        });
-    }
     function isUsernameAvailable(data, uid) {
         var _a;
         return __awaiter(this, void 0, void 0, function* () {
@@ -235,6 +151,28 @@ module.exports = function (User) {
             data.groupTitle = JSON.stringify(groupTitles[0]);
         }
     }
+    function isEmailValid(data) {
+        if (!data.email) {
+            return;
+        }
+        data.email = data.email.trim();
+        if (!utils_1.default.isEmailValid(data.email)) {
+            throw new Error('[[error:invalid-email]]');
+        }
+    }
+    function validateData(callerUid, data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            isEmailValid(data);
+            yield isUsernameAvailable(data, data.uid);
+            yield isWebsiteValid(callerUid, data);
+            yield isAboutMeValid(callerUid, data);
+            yield isSignatureValid(callerUid, data);
+            isFullnameValid(data);
+            isLocationValid(data);
+            isBirthdayValid(data);
+            isGroupTitleValid(data);
+        });
+    }
     User.checkMinReputation = function (callerUid, uid, setting) {
         return __awaiter(this, void 0, void 0, function* () {
             const roundedNumber1 = Math.round(uid * 10) / 10;
@@ -337,6 +275,64 @@ module.exports = function (User) {
             }
         });
     }
+    User.updateProfile = function (uid, data, extraFields) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let fields = [
+                'username', 'email', 'fullname', 'website', 'location',
+                'groupTitle', 'birthday', 'signature', 'aboutme',
+            ];
+            if (Array.isArray(extraFields)) {
+                fields = lodash_1.default.uniq(fields.concat(extraFields));
+            }
+            if (!data.uid) {
+                throw new Error('[[error:invalid-update-uid]]');
+            }
+            const updateUid = data.uid;
+            const result = yield plugins_1.default.hooks.fire('filter:user.updateProfile', {
+                uid: uid,
+                data: data,
+                fields: fields,
+            });
+            fields = result.fields;
+            data = result.data;
+            yield validateData(uid, data);
+            const oldData = yield User.getUserFields(updateUid, fields);
+            const updateData = {};
+            yield Promise.all(fields.map((field) => __awaiter(this, void 0, void 0, function* () {
+                if (!(data[field] !== undefined && typeof data[field] === 'string')) {
+                    return;
+                }
+                data[field] = data[field].trim();
+                if (field === 'email') {
+                    return yield updateEmail(updateUid, data.email);
+                }
+                else if (field === 'username') {
+                    return yield updateUsername(updateUid, data.username);
+                }
+                else if (field === 'fullname') {
+                    return yield updateFullname(updateUid, data.fullname);
+                }
+                updateData[field] = data[field];
+            })));
+            if (Object.keys(updateData).length) {
+                yield User.setUserFields(updateUid, updateData);
+            }
+            const hookResult = plugins_1.default.hooks.fire('action:password.change', {
+                uid: uid,
+                data: data,
+                fields: fields,
+                oldData: oldData,
+            });
+            // Check if it's a promise and wait for it if needed
+            if (hookResult instanceof Promise) {
+                yield hookResult;
+            }
+            return yield User.getUserFields(updateUid, [
+                'email', 'username', 'userslug',
+                'picture', 'icon:text', 'icon:bgColor',
+            ]);
+        });
+    };
     User.changePassword = function (uid, data) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
