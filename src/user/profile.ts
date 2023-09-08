@@ -32,23 +32,46 @@ interface UserChangePasswordData {
 }
 
 export interface UserModel {
-  updateProfile: (uid: number, data: UserUpdateData, extraFields: any) => Promise<unknown>;
+  updateProfile: (uid: number, data: UserUpdateData, extraFields: string[]) => Promise<unknown>;
   hashPassword(newPassword: string): unknown;
-  auth: any;
-  reset: any;
   isPasswordCorrect(uid: number, currentPassword: string, ip: string): unknown;
-  hasPassword(uid: number): any;
-  isAdministrator(uid: number): any;
+  hasPassword(uid: number): boolean;
+  isAdministrator(uid: number): boolean;
   isPasswordValid(newPassword: string): unknown;
-  setUserField(uid: number, field: string, value: any): unknown;
-  email: any;
+  setUserField(uid: number, field: string, value: string): unknown;
   getUserField(uid: number, arg1: string): unknown;
   checkUsername: (data: UserUpdateData, uid: number) => Promise<void>;
   existsBySlug(userslug: string): unknown;
-  setUserFields(updateUid: number, updateData: any): unknown;
+  setUserFields(updateUid: number, updateData: unknown)
   getUserFields(updateUid: number, fields: string[]): unknown;
   checkMinReputation: (callerUid: number, uid: number, setting: string) => Promise<void>;
   changePassword: (uid: number, data: UserChangePasswordData) => Promise<void>;
+  reset: ResetModule;
+  auth: AuthModule;
+  email: EmailModule;
+}
+
+// Define a type for the Reset module
+interface ResetModule {
+  cleanByUid(uid: number): Promise<void>;
+  updateExpiry(uid: number): Promise<void>;
+}
+
+// Define a type for the Auth module
+interface AuthModule {
+  revokeAllSessions(uid: number): Promise<void>;
+}
+
+// Define a type for the Email module
+interface EmailModule {
+    expireValidation(uid: number): Promise<void>;
+    sendValidationEmail(uid: number, options: SendValidationEmailOptions): Promise<void>;
+  }
+
+// Define a type for the options parameter of sendValidationEmail
+interface SendValidationEmailOptions {
+  email: string;
+  force: number;
 }
 
 module.exports = function (User: UserModel) {
