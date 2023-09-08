@@ -113,18 +113,14 @@ module.exports = function (User) {
             data.username = (_a = data.username) === null || _a === void 0 ? void 0 : _a.trim();
             let userData;
             if (uid) {
-                const userData = (yield User.getUserFields(uid, ['username', 'userslug'])) || { username: '', userslug: '' };
+                userData = yield User.getUserFields(uid, ['username', 'userslug']);
                 if (userData.username === data.username) {
                     return;
                 }
             }
-            // The next line calls a function in a module that has not been updated to TS yet
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             if (data.username.length < meta_1.default.config.minimumUsernameLength) {
                 throw new Error('[[error:username-too-short]]');
             }
-            // The next line calls a function in a module that has not been updated to TS yet
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             if (data.username.length > meta_1.default.config.maximumUsernameLength) {
                 throw new Error('[[error:username-too-long]]');
             }
@@ -148,7 +144,7 @@ module.exports = function (User) {
             }
         });
     }
-    User.checkUsername = (data, uid) => __awaiter(this, void 0, void 0, function* () { return isUsernameAvailable(data, uid); });
+    User.checkUsername = (username, uid) => __awaiter(this, void 0, void 0, function* () { return isUsernameAvailable(username, uid); });
     function isWebsiteValid(callerUid, data) {
         return __awaiter(this, void 0, void 0, function* () {
             if (!data.website) {
@@ -165,11 +161,7 @@ module.exports = function (User) {
             if (!data.aboutme) {
                 return;
             }
-            // The next line calls a function in a module that has not been updated to TS yet
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             if (data.aboutme !== undefined && data.aboutme.length > meta_1.default.config.maximumAboutMeLength) {
-                // The next line calls a function in a module that has not been updated to TS yet
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 throw new Error(`[[error:about-me-too-long, ${String(meta_1.default.config.maximumAboutMeLength)}]]`);
             }
             yield User.checkMinReputation(callerUid, data.uid, 'min:rep:aboutme');
@@ -181,11 +173,7 @@ module.exports = function (User) {
                 return;
             }
             const signature = data.signature.replace(/\r\n/g, '\n');
-            // The next line calls a function in a module that has not been updated to TS yet
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             if (signature.length > meta_1.default.config.maximumSignatureLength) {
-                // The next line calls a function in a module that has not been updated to TS yet
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 throw new Error(`[[error:signature-too-long, ${String(meta_1.default.config.maximumSignatureLength)}]]`);
             }
             yield User.checkMinReputation(callerUid, data.uid, 'min:rep:signature');
@@ -253,7 +241,7 @@ module.exports = function (User) {
             if (reputation < meta_1.default.config[setting]) {
                 // The next line calls a function in a module that has not been updated to TS yet
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-                throw new Error(`[[error:not-enough-reputation-${setting.replace(/:/g, '-')}, ${String(meta_1.default.config[setting])}]]`);
+                throw new Error(`[[error:not-enough-reputation-${setting.replace(/:/g, '-')}, ${meta_1.default.config[setting]}]]`);
             }
         });
     };
@@ -273,7 +261,7 @@ module.exports = function (User) {
                     force: 1,
                     // The next line calls a function in a module that has not been updated to TS yet
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-                }).catch(err => winston_1.default.error(`[user.create] Validation email failed to send\n[emailer.send] ${String(err.stack)}`));
+                }).catch(err => winston_1.default.error(`[user.create] Validation email failed to send\n[emailer.send] ${err.stack}`));
             }
         });
     }
